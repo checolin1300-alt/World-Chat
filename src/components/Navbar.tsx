@@ -1,15 +1,14 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun, LogOut, MessageSquare } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Moon, Sun, LogOut, MessageSquare, Settings } from 'lucide-react';
 
-export function Navbar() {
-    const { session, profile } = useAuth();
+interface NavbarProps {
+    onOpenSettings?: () => void;
+}
+
+export function Navbar({ onOpenSettings }: NavbarProps) {
+    const { session, profile, signOut } = useAuth();
     const { theme, toggleTheme } = useTheme();
-
-    const handleSignOut = async () => {
-        await supabase.auth.signOut();
-    };
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
@@ -36,29 +35,37 @@ export function Navbar() {
                         {session && (
                             <div className="flex items-center gap-4">
                                 {profile && (
-                                    <div className="hidden sm:flex items-center gap-2">
+                                    <button
+                                        onClick={onOpenSettings}
+                                        className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group"
+                                    >
                                         {profile.avatar_url ? (
                                             <img
                                                 src={profile.avatar_url}
                                                 alt={profile.username}
-                                                className="w-8 h-8 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700"
+                                                className="w-8 h-8 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 group-hover:border-blue-500 transition-colors"
                                             />
                                         ) : (
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
                                                 {profile.username.charAt(0).toUpperCase()}
                                             </div>
                                         )}
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                            {profile.username}
-                                        </span>
-                                    </div>
+                                        <div className="hidden sm:flex flex-col items-start leading-tight">
+                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                                {profile.username}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500 font-medium flex items-center gap-0.5">
+                                                <Settings size={10} /> Perfil
+                                            </span>
+                                        </div>
+                                    </button>
                                 )}
                                 <button
-                                    onClick={handleSignOut}
-                                    className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                    onClick={() => signOut()}
+                                    className="p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                    title="Cerrar Sesión"
                                 >
-                                    <LogOut size={18} />
-                                    <span className="hidden sm:inline">Sign Out</span>
+                                    <LogOut size={20} />
                                 </button>
                             </div>
                         )}

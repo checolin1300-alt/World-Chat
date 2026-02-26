@@ -5,11 +5,13 @@ import clsx from 'clsx';
 interface Message {
     id: string;
     user_id: string;
-    content: string;
+    content: string | null;
+    image_url: string | null;
     created_at: string;
     profiles: {
         username: string;
         avatar_url: string | null;
+        theme_color: string | null;
     };
 }
 
@@ -19,10 +21,21 @@ interface MessageItemProps {
 }
 
 export const MessageItem = React.memo(({ message, isOwnMessage }: MessageItemProps) => {
-    const { content, created_at, profiles } = message;
+    const { content, image_url, created_at, profiles } = message;
 
-    const username = profiles?.username || 'Unknown User';
+    const username = profiles?.username || 'Usuario';
     const avatarUrl = profiles?.avatar_url;
+    const themeColor = profiles?.theme_color || 'blue';
+
+    const getThemeClasses = (color: string) => {
+        switch (color) {
+            case 'green': return 'bg-emerald-600';
+            case 'pink': return 'bg-pink-500';
+            case 'red': return 'bg-red-600';
+            case 'blue':
+            default: return 'bg-blue-600';
+        }
+    };
 
     return (
         <div className={clsx('flex gap-3 mb-4 max-w-[85%]', isOwnMessage ? 'ml-auto flex-row-reverse' : '')}>
@@ -52,13 +65,23 @@ export const MessageItem = React.memo(({ message, isOwnMessage }: MessageItemPro
 
                 <div
                     className={clsx(
-                        'px-4 py-2.5 rounded-2xl shadow-sm leading-relaxed break-words',
+                        'px-4 py-2.5 rounded-2xl shadow-sm leading-relaxed break-words overflow-hidden',
                         isOwnMessage
-                            ? 'bg-blue-600 text-white rounded-tr-sm'
+                            ? `${getThemeClasses(themeColor)} text-white rounded-tr-sm`
                             : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white rounded-tl-sm'
                     )}
                 >
-                    {content}
+                    {image_url && (
+                        <div className="mb-2 -mx-1">
+                            <img
+                                src={image_url}
+                                alt="Shared"
+                                className="max-w-full rounded-lg shadow-sm cursor-pointer hover:opacity-95 transition-opacity"
+                                onClick={() => window.open(image_url, '_blank')}
+                            />
+                        </div>
+                    )}
+                    {content && <span>{content}</span>}
                 </div>
             </div>
         </div>

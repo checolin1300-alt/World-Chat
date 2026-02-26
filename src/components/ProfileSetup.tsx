@@ -6,6 +6,7 @@ import { User, Camera, Loader2, ArrowRight } from 'lucide-react';
 export function ProfileSetup() {
     const { user, signOut, refreshProfile } = useAuth();
     const [username, setUsername] = useState('');
+    const [bio, setBio] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -58,6 +59,8 @@ export function ProfileSetup() {
                         id: user.id,
                         username,
                         avatar_url: avatarUrl,
+                        bio: bio.trim() || null,
+                        theme_color: 'blue'
                     },
                 ]);
 
@@ -140,6 +143,23 @@ export function ProfileSetup() {
                     <p className="mt-1.5 text-xs text-slate-500">
                         Only letters, numbers, and underscores (max 20 characters)
                     </p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Biography / About you
+                    </label>
+                    <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        maxLength={160}
+                        rows={3}
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Tell the world something about yourself..."
+                    />
+                    <div className="mt-1 flex justify-end">
+                        <span className="text-[10px] text-slate-400 font-mono">{bio.length}/160</span>
+                    </div>
                 </div>
 
                 <button

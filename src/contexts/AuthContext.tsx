@@ -6,6 +6,8 @@ export interface Profile {
     id: string;
     username: string;
     avatar_url: string | null;
+    bio: string | null;
+    theme_color: string | null;
     created_at: string;
 }
 
@@ -17,6 +19,7 @@ interface AuthContextType {
     error: string | null;
     isPasswordRecovery: boolean;
     refreshProfile: () => Promise<void>;
+    updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
 }
 
@@ -84,6 +87,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const updateProfile = async (updates: Partial<Profile>) => {
+        if (!user) return { error: 'No authenticated user' };
+
+        try {
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update(updates)
+                .eq('id', user.id);
+
+            if (updateError) throw updateError;
+
+            // Update local state optimizing UX
+            setProfile(prev => prev ? { ...prev, ...updates } : null);
+            return { error: null };
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            return { error: err };
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
 
@@ -140,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, user, profile, loading, error, isPasswordRecovery, refreshProfile, signOut }}>
+        <AuthContext.Provider value={{ session, user, profile, loading, error, isPasswordRecovery, refreshProfile, updateProfile, signOut }}>
             {children}
         </AuthContext.Provider>
     );

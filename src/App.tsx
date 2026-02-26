@@ -4,6 +4,7 @@ import { Auth } from './components/Auth';
 import { ProfileSetup } from './components/ProfileSetup';
 import { ChatRoom } from './components/ChatRoom';
 import { UpdatePassword } from './components/UpdatePassword';
+import { ProfileSettings } from './components/ProfileSettings';
 import { isConfigured } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import React from 'react';
@@ -11,6 +12,7 @@ import React from 'react';
 function App() {
   const { session, profile, loading, error, isPasswordRecovery, signOut, refreshProfile } = useAuth();
   const [showReset, setShowReset] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   React.useEffect(() => {
     let timer: number;
@@ -143,10 +145,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 pb-20 pt-16 transition-colors duration-200">
-      <Navbar />
+      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {renderContent()}
       </main>
+
+      {isSettingsOpen && <ProfileSettings onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );
 }
