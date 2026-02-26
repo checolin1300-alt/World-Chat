@@ -56,24 +56,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         let mounted = true;
 
+        // Safety timeout to prevent infinite loading screen (8s)
+        const safetyTimeout = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('Auth initialization taking too long, forcing loading=false');
+                setLoading(false);
+            }
+        }, 8000);
+
         const initializeAuth = async () => {
             try {
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
                 if (error) throw error;
 
                 if (mounted) {
-                    setSession(session);
-                    setUser(session?.user ?? null);
+                    setSession(initialSession);
+                    setUser(initialSession?.user ?? null);
 
-                    if (session?.user) {
-                        await fetchProfile(session.user.id);
+                    if (initialSession?.user) {
+                        await fetchProfile(initialSession.user.id);
                     } else {
                         setProfile(null);
+                        setLoading(false);
                     }
                 }
             } catch (error) {
                 console.error('Error during auth initialization:', error);
-            } finally {
                 if (mounted) setLoading(false);
             }
         };
@@ -94,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         await fetchProfile(newSession.user.id);
                     } else {
                         setProfile(null);
+                        setLoading(false);
                     }
                 }
             }
@@ -101,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return () => {
             mounted = false;
+            clearTimeout(safetyTimeout);
             subscription.unsubscribe();
         };
     }, []);
