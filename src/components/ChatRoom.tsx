@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageItem } from './MessageItem';
 import { UserProfileModal } from './UserProfileModal';
-import { Send, Loader2, AlertCircle, Image as ImageIcon, X } from 'lucide-react';
+import { OnlineUsers } from './OnlineUsers';
+import { Send, Loader2, AlertCircle, Image as ImageIcon, X, Users } from 'lucide-react';
 import clsx from 'clsx';
 
 export function ChatRoom() {
@@ -16,6 +17,7 @@ export function ChatRoom() {
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [viewedProfile, setViewedProfile] = useState<any>(null);
+    const [showOnlineUsers, setShowOnlineUsers] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -194,95 +196,142 @@ export function ChatRoom() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-
-            {error && (
-                <div className="bg-red-50 dark:bg-red-900/30 p-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-900">
-                    <AlertCircle size={16} />
-                    {error}
-                    <button onClick={() => setError(null)} className="ml-auto underline">Dismiss</button>
-                </div>
-            )}
-
-            {/* Chat Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
-                {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-4">
-                            <Send size={32} className="text-slate-300 dark:text-slate-600" />
-                        </div>
-                        <p className="text-lg font-medium">No messages yet</p>
-                        <p className="text-sm mt-1">Be the first to say hello!</p>
-                    </div>
-                ) : (
-                    messages.map((message) => (
-                        <MessageItem
-                            key={message.id}
-                            message={message}
-                            isOwnMessage={message.user_id === user?.id}
-                            onAvatarClick={(profile) => setViewedProfile(profile)}
-                        />
-                    ))
-                )}
-                <div ref={messagesEndRef} />
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-10rem)]">
+            {/* Mobile Online Users Toggle */}
+            <div className="lg:hidden flex justify-end mb-2">
+                <button
+                    onClick={() => setShowOnlineUsers(!showOnlineUsers)}
+                    className={clsx(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border",
+                        showOnlineUsers
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800"
+                    )}
+                >
+                    <Users size={18} />
+                    {showOnlineUsers ? 'Ocultar Online' : 'Ver Online'}
+                </button>
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                {selectedImage && (
-                    <div className="mb-3 relative inline-block animate-in slide-in-from-bottom-2 duration-200">
-                        <img src={selectedImage} alt="Selected" className="h-20 w-auto rounded-xl shadow-md border-2 border-blue-500" />
-                        <button
-                            onClick={() => setSelectedImage(null)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
-                        >
-                            <X size={14} />
+            {/* Online Users Sidebar (Mobile Overlay/Collapsible) */}
+            <div className={clsx(
+                "lg:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300",
+                showOnlineUsers ? "opacity-100" : "opacity-0 pointer-events-none"
+            )} onClick={() => setShowOnlineUsers(false)}>
+                <div
+                    className={clsx(
+                        "absolute right-0 top-0 bottom-0 w-80 bg-white dark:bg-slate-900 shadow-2xl transition-transform duration-300 ease-out",
+                        showOnlineUsers ? "translate-x-0" : "translate-x-full"
+                    )}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="p-4 flex justify-between items-center border-b dark:border-slate-800">
+                        <h3 className="font-bold">Usuarios en línea</h3>
+                        <button onClick={() => setShowOnlineUsers(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
+                            <X size={20} />
                         </button>
+                    </div>
+                    <div className="h-[calc(100vh-4rem)]">
+                        <OnlineUsers />
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden min-w-0">
+                {error && (
+                    <div className="bg-red-50 dark:bg-red-900/30 p-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-900">
+                        <AlertCircle size={16} />
+                        {error}
+                        <button onClick={() => setError(null)} className="ml-auto underline">Dismiss</button>
                     </div>
                 )}
-                <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={imageUploading || sending}
-                        className={clsx(
-                            "p-2 rounded-full transition-all disabled:opacity-50",
-                            getThemeText()
-                        )}
-                        title="Adjuntar imagen"
-                    >
-                        {imageUploading ? <Loader2 size={24} className="animate-spin" /> : <ImageIcon size={24} />}
-                    </button>
 
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                    />
+                {/* Chat Messages Area */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
+                    {messages.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                            <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-4">
+                                <Send size={32} className="text-slate-300 dark:text-slate-600" />
+                            </div>
+                            <p className="text-lg font-medium">No messages yet</p>
+                            <p className="text-sm mt-1">Be the first to say hello!</p>
+                        </div>
+                    ) : (
+                        messages.map((message) => (
+                            <MessageItem
+                                key={message.id}
+                                message={message}
+                                isOwnMessage={message.user_id === user?.id}
+                                onAvatarClick={(profile) => setViewedProfile(profile)}
+                            />
+                        ))
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
 
-                    <div className="relative flex-1 flex items-center">
-                        <input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder={selectedImage ? "Añade un mensaje..." : "Escribe tu mensaje..."}
-                            className="w-full pl-5 pr-14 py-3.5 bg-slate-100 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 rounded-full text-slate-900 dark:text-white transition-all outline-none"
-                            maxLength={500}
-                        />
+                {/* Input Area */}
+                <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                    {selectedImage && (
+                        <div className="mb-3 relative inline-block animate-in slide-in-from-bottom-2 duration-200">
+                            <img src={selectedImage} alt="Selected" className="h-20 w-auto rounded-xl shadow-md border-2 border-blue-500" />
+                            <button
+                                onClick={() => setSelectedImage(null)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    )}
+                    <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
                         <button
-                            type="submit"
-                            disabled={(!newMessage.trim() && !selectedImage) || sending || imageUploading}
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={imageUploading || sending}
                             className={clsx(
-                                "absolute right-2 p-2.5 text-white rounded-full disabled:opacity-50 disabled:bg-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all",
-                                getThemeAccent()
+                                "p-2 rounded-full transition-all disabled:opacity-50",
+                                getThemeText()
                             )}
+                            title="Adjuntar imagen"
                         >
-                            {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="translate-x-0.5" />}
+                            {imageUploading ? <Loader2 size={24} className="animate-spin" /> : <ImageIcon size={24} />}
                         </button>
-                    </div>
-                </form>
+
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            accept="image/*"
+                            className="hidden"
+                        />
+
+                        <div className="relative flex-1 flex items-center">
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder={selectedImage ? "Añade un mensaje..." : "Escribe tu mensaje..."}
+                                className="w-full pl-5 pr-14 py-3.5 bg-slate-100 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 rounded-full text-slate-900 dark:text-white transition-all outline-none"
+                                maxLength={500}
+                            />
+                            <button
+                                type="submit"
+                                disabled={(!newMessage.trim() && !selectedImage) || sending || imageUploading}
+                                className={clsx(
+                                    "absolute right-2 p-2.5 text-white rounded-full disabled:opacity-50 disabled:bg-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all",
+                                    getThemeAccent()
+                                )}
+                            >
+                                {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="translate-x-0.5" />}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block w-72 h-full flex-shrink-0">
+                <OnlineUsers />
             </div>
 
             {viewedProfile && (
