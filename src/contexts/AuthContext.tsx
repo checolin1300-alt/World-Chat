@@ -91,29 +91,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const initializeAuth = async () => {
             try {
-                console.log('Iniciando verificación de sesión...');
-                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-                if (error) throw error;
+                console.log('Realizando limpieza de sesión inicial...');
+                // Force logout on every refresh as requested to ensure a clean state
+                await supabase.auth.signOut();
 
                 if (mounted) {
-                    setSession(initialSession);
-                    setUser(initialSession?.user ?? null);
-
-                    if (initialSession?.user) {
-                        console.log('Sesión encontrada, obteniendo perfil...');
-                        await fetchProfile(initialSession.user.id);
-                    } else {
-                        console.log('No hay sesión activa.');
-                        setProfile(null);
-                        setLoading(false);
-                    }
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
+                    setError(null);
                 }
             } catch (error) {
-                console.error('Error durante la inicialización de auth:', error);
-                if (mounted) {
-                    setProfile(null);
-                    setLoading(false);
-                }
+                console.error('Error durante el reset de sesión:', error);
+            } finally {
+                if (mounted) setLoading(false);
             }
         };
 

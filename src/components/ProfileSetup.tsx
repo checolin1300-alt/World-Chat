@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { User, Camera, Loader2, ArrowRight } from 'lucide-react';
 
 export function ProfileSetup() {
-    const { user, refreshProfile } = useAuth();
+    const { user, signOut, refreshProfile } = useAuth();
     const [username, setUsername] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -155,6 +155,16 @@ export function ProfileSetup() {
                         </>
                     )}
                 </button>
+
+                <div className="mt-6 text-center">
+                    <button
+                        type="button"
+                        onClick={() => signOut()}
+                        className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-colors"
+                    >
+                        ¿No eres tú? Cerrar Sesión
+                    </button>
+                </div>
             </form>
         </div>
     );

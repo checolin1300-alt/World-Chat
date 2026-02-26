@@ -64,19 +64,32 @@ function App() {
                 ¿Sigue cargando? Tu navegador podría tener una sesión antigua trabada.
               </p>
               <button
+                type="button"
                 onClick={() => {
-                  // Nuclear Reset: Clear all possible storage and reload
-                  window.localStorage.clear();
-                  window.sessionStorage.clear();
-                  // Remove any specific supabase keys just in case clear() was intercepted
-                  Object.keys(localStorage).forEach(key => {
-                    if (key.includes('supabase')) localStorage.removeItem(key);
-                  });
-                  window.location.reload();
+                  console.log('Reset Nuclear iniciado...');
+                  try {
+                    // Force state cleanup first
+                    signOut();
+                    // Nuclear Reset: Clear all possible storage
+                    window.localStorage.clear();
+                    window.sessionStorage.clear();
+                    // Successive attempts to clear specific keys
+                    for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      if (key && key.includes('supabase')) {
+                        localStorage.removeItem(key);
+                      }
+                    }
+                    console.log('Limpieza completada, recargando...');
+                    window.location.href = window.location.origin;
+                  } catch (e) {
+                    console.error('Error durante el reset nuclear:', e);
+                    window.location.reload();
+                  }
                 }}
-                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold rounded-xl border-2 border-amber-200 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-slate-700 transition-all shadow-md active:scale-95"
               >
-                Resetear Aplicación (Cerrar Todo)
+                🔴 Resetear Aplicación Ahora
               </button>
             </div>
           )}
