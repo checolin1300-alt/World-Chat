@@ -5,6 +5,7 @@ import { MessageItem } from './MessageItem';
 import { UserProfileModal } from './UserProfileModal';
 import { OnlineUsers } from './OnlineUsers';
 import { Send, Loader2, AlertCircle, Image as ImageIcon, X, Users } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 import clsx from 'clsx';
 
 export function ChatRoom() {
@@ -143,9 +144,18 @@ export function ChatRoom() {
             const fileName = `${user.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 
+            // Image Compression
+            const options = {
+                maxSizeMB: 0.5,
+                maxWidthOrHeight: 800,
+                useWebWorker: true,
+            };
+
+            const compressedFile = await imageCompression(file, options);
+
             const { error: uploadError } = await supabase.storage
                 .from('chat-images')
-                .upload(filePath, file);
+                .upload(filePath, compressedFile);
 
             if (uploadError) throw uploadError;
 

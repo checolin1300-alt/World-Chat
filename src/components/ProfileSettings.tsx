@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { User, Camera, Loader2, Check, X, Palette, UserCircle, AlignLeft } from 'lucide-react';
+import imageCompression from 'browser-image-compression';
 
 interface ProfileSettingsProps {
     onClose: () => void;
@@ -46,9 +47,18 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
             const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 
+            // Image Compression
+            const options = {
+                maxSizeMB: 0.5,
+                maxWidthOrHeight: 800,
+                useWebWorker: true,
+            };
+
+            const compressedFile = await imageCompression(file, options);
+
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
-                .upload(filePath, file);
+                .upload(filePath, compressedFile);
 
             if (uploadError) throw uploadError;
 
