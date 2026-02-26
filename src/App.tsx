@@ -66,28 +66,22 @@ function App() {
               <button
                 type="button"
                 onClick={() => {
-                  console.log('Reset Nuclear iniciado (Sincrónico)...');
+                  console.log('Botón de Reset pulsado');
                   // Nuclear Reset: Clear all possible storage immediately
-                  window.localStorage.clear();
-                  window.sessionStorage.clear();
+                  localStorage.clear();
+                  sessionStorage.clear();
 
-                  // Specific keys just in case
+                  // Specific cleanup
                   try {
-                    const keys = Object.keys(localStorage);
-                    for (const key of keys) {
-                      if (key.toLowerCase().includes('supabase')) {
-                        localStorage.removeItem(key);
-                      }
+                    for (let i = 0; i < localStorage.length; i++) {
+                      const key = localStorage.key(i);
+                      if (key?.includes('supabase')) localStorage.removeItem(key);
                     }
-                  } catch (e) {
-                    console.warn('Error clearing specific keys:', e);
-                  }
+                  } catch (e) { }
 
-                  console.log('Limpieza completada, recargando...');
-                  // Force a hard reload to the home page
-                  window.location.replace(window.location.origin);
+                  window.location.href = '/';
                 }}
-                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold rounded-xl border-2 border-amber-200 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-slate-700 transition-all shadow-md active:scale-95"
+                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95"
               >
                 🔴 Resetear Aplicación Ahora
               </button>
@@ -98,17 +92,22 @@ function App() {
     );
   }
 
-  // Error state for failed profile fetch (to avoid redirecting to ProfileSetup incorrectly)
-  if (error && session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full text-center">
+  // Main rendering logic
+  const renderContent = () => {
+    if (!session) {
+      return <Auth />;
+    }
+
+    // If we have a session but there was an error fetching the profile
+    if (error) {
+      return (
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full text-center mx-auto">
           <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600 dark:text-red-400">
             <AlertCircle size={32} />
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Error de conexión</h2>
           <p className="text-slate-500 dark:text-slate-400 mb-6">
-            No pudimos cargar tus datos. Esto suele ser un problema temporal de red.
+            No pudimos cargar tus datos de perfil. Esto puede ser un problema temporal de red.
           </p>
           <div className="flex flex-col gap-3">
             <button
@@ -125,26 +124,23 @@ function App() {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
+    // If we have a session and NO profile was found (and no error)
+    if (!profile) {
+      return <ProfileSetup />;
+    }
+
+    // Everything is good
+    return <ChatRoom />;
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 pb-20 pt-16 transition-colors duration-200">
       <Navbar />
-
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        {!session ? (
-          <Auth />
-        ) : error ? (
-          // We already handled error && session above, but just in case
-          null
-        ) : !profile ? (
-          // Only show ProfileSetup if we have a session AND confirmed no profile
-          <ProfileSetup />
-        ) : (
-          <ChatRoom />
-        )}
+        {renderContent()}
       </main>
     </div>
   );

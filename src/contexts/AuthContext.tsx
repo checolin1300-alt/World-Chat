@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const refreshProfile = async () => {
         if (user) {
+            setLoading(true);
             await fetchProfile(user.id);
         }
     };
@@ -84,83 +85,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         let mounted = true;
 
-        // Safety timeout to prevent infinite loading screen (8s)
-        const safetyTimeout = setTimeout(() => {
+        // Start loading
+        setLoading(true);
+
+        const handleAuthEvent = async (event: string, session: Session | null) => {
+            if (!mounted) return;
+
+            console.log(`Auth event: ${event}`);
+            const currentUser = session?.user ?? null;
+
+            // Set session/user first
+            setSession(session);
+            setUser(currentUser);
+
+            if (currentUser) {
+                // If we have a user, we MUST have a profile before showing the app
+                await fetchProfile(currentUser.id);
+            } else {
+                // No user, no profile
+                setProfile(null);
+                setLoading(false);
+            }
+        };
+
+        // Get initial session and subscribe in one go
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            handleAuthEvent(event, session);
+        });
+
+        // Safety timeout (8s)
+        const timeout = setTimeout(() => {
             if (mounted && loading) {
-                console.warn('Auth initialization taking too long, forcing loading=false');
+                console.warn('Auth hang detected, forcing loading=false');
                 setLoading(false);
             }
         }, 8000);
 
-        const initializeAuth = async () => {
-            try {
-                setLoading(true);
-                const { data: { session: initialSession }, error: authError } = await supabase.auth.getSession();
-
-                if (mounted) {
-                    if (authError) {
-                        console.error('Auth check error:', authError);
-                        setSession(null);
-                        setUser(null);
-                        setLoading(false);
-                        return;
-                    }
-
-                    setSession(initialSession);
-                    setUser(initialSession?.user ?? null);
-
-                    if (initialSession?.user) {
-                        // Keep loading = true while fetching profile
-                        await fetchProfile(initialSession.user.id);
-                    } else {
-                        setProfile(null);
-                        setLoading(false);
-                    }
-                }
-            } catch (error) {
-                console.error('Error durante la inicialización de auth:', error);
-                if (mounted) {
-                    setSession(null);
-                    setUser(null);
-                    setProfile(null);
-                    setLoading(false);
-                }
-            }
-        };
-
-        initializeAuth();
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, newSession) => {
-                if (!mounted) return;
-
-                // Only update and potentially trigger loading if session actually changed
-                // or if it's a significant event (like SIGNED_IN)
-                if (_event === 'SIGNED_OUT') {
-                    setSession(null);
-                    setUser(null);
-                    setProfile(null);
-                    setLoading(false);
-                } else if (newSession?.user) {
-                    // Start loading before setting session to prevent flicker in App.tsx
-                    if (_event === 'SIGNED_IN') setLoading(true);
-
-                    setSession(newSession);
-                    setUser(newSession?.user ?? null);
-
-                    if (_event !== 'INITIAL_SESSION') {
-                        setLoading(true);
-                        await fetchProfile(newSession.user.id);
-                    }
-                }
-            }
-        );
-
         return () => {
             mounted = false;
-            clearTimeout(safetyTimeout);
             subscription.unsubscribe();
+            clearTimeout(timeout);
         };
     }, []);
 
