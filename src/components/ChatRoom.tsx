@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageItem } from './MessageItem';
@@ -17,35 +17,7 @@ export function ChatRoom() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    useEffect(() => {
-        fetchMessages();
-
-        // Subscribe to realtime messages
-        const channel = supabase
-            .channel('public:messages')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages',
-                },
-                (payload) => {
-                    fetchSingleMessage(payload.new.id);
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const fetchMessages = async () => {
+    const fetchMessages = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from('messages')
@@ -70,9 +42,9 @@ export function ChatRoom() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [setMessages, setError, setLoading]);
 
-    const fetchSingleMessage = async (messageId: string) => {
+    const fetchSingleMessage = useCallback(async (messageId: string) => {
         try {
             const { data, error } = await supabase
                 .from('messages')
@@ -99,7 +71,35 @@ export function ChatRoom() {
         } catch (err) {
             console.error('Error fetching new message:', err);
         }
-    };
+    }, [setMessages]);
+
+    useEffect(() => {
+        fetchMessages();
+
+        // Subscribe to realtime messages
+        const channel = supabase
+            .channel('public:messages')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                },
+                (payload) => {
+                    fetchSingleMessage(payload.new.id);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [fetchMessages, fetchSingleMessage]);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();

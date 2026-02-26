@@ -21,26 +21,29 @@ interface MessageItemProps {
 export const MessageItem = React.memo(({ message, isOwnMessage }: MessageItemProps) => {
     const { content, created_at, profiles } = message;
 
+    const username = profiles?.username || 'Unknown User';
+    const avatarUrl = profiles?.avatar_url;
+
     return (
         <div className={clsx('flex gap-3 mb-4 max-w-[85%]', isOwnMessage ? 'ml-auto flex-row-reverse' : '')}>
             <div className="flex-shrink-0">
-                {profiles.avatar_url ? (
+                {avatarUrl ? (
                     <img
-                        src={profiles.avatar_url}
-                        alt={profiles.username}
+                        src={avatarUrl}
+                        alt={username}
                         className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
                     />
                 ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
-                        {profiles.username.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-bold shadow-sm">
+                        {username.charAt(0).toUpperCase()}
                     </div>
                 )}
             </div>
 
             <div className={clsx('flex flex-col', isOwnMessage ? 'items-end' : 'items-start')}>
                 <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-sm border flex font-medium text-slate-700 dark:text-slate-300">
-                        {profiles.username}
+                    <span className="text-sm flex font-medium text-slate-700 dark:text-slate-300">
+                        {username}
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">
                         {formatDistanceToNow(new Date(created_at), { addSuffix: true })}
