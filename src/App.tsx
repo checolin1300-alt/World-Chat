@@ -146,7 +146,7 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 pb-20 pt-16 transition-colors duration-200">
       <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {renderContent()}
       </main>
 

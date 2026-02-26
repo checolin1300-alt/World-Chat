@@ -10,7 +10,11 @@ interface PresenceState {
     online_at: string;
 }
 
-export function OnlineUsers() {
+interface OnlineUsersProps {
+    onSelectUser: (userId: string, profile: any) => void;
+}
+
+export function OnlineUsers({ onSelectUser }: OnlineUsersProps) {
     const { user, profile } = useAuth();
     const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,9 +90,15 @@ export function OnlineUsers() {
                 ) : (
                     <div className="space-y-1">
                         {onlineUsers.map((onlineUser) => (
-                            <div
+                            <button
                                 key={onlineUser.user_id}
-                                className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                                onClick={() => onSelectUser(onlineUser.user_id, {
+                                    id: onlineUser.user_id,
+                                    username: onlineUser.username,
+                                    avatar_url: onlineUser.avatar_url
+                                })}
+                                disabled={onlineUser.user_id === user?.id}
+                                className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group disabled:cursor-default disabled:hover:bg-transparent"
                             >
                                 <div className="relative">
                                     {onlineUser.avatar_url ? (
@@ -115,7 +125,7 @@ export function OnlineUsers() {
                                         En línea
                                     </p>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 )}
