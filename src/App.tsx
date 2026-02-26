@@ -8,7 +8,7 @@ import { AlertCircle } from 'lucide-react';
 import React from 'react';
 
 function App() {
-  const { session, profile, loading, signOut } = useAuth();
+  const { session, profile, loading, error, signOut, refreshProfile } = useAuth();
   const [showReset, setShowReset] = React.useState(false);
 
   React.useEffect(() => {
@@ -61,19 +61,56 @@ function App() {
           {showReset && (
             <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <p className="text-sm text-amber-700 dark:text-amber-400 mb-4">
-                ¿Lleva mucho tiempo? Puede haber un problema con tu sesión anterior.
+                ¿Sigue cargando? Tu navegador podría tener una sesión antigua trabada.
               </p>
               <button
                 onClick={() => {
-                  localStorage.clear();
-                  signOut();
+                  // Nuclear Reset: Clear all possible storage and reload
+                  window.localStorage.clear();
+                  window.sessionStorage.clear();
+                  // Remove any specific supabase keys just in case clear() was intercepted
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.includes('supabase')) localStorage.removeItem(key);
+                  });
+                  window.location.reload();
                 }}
                 className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
               >
-                Cerrar Sesión y Reintentar
+                Resetear Aplicación (Cerrar Todo)
               </button>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state for failed profile fetch (to avoid redirecting to ProfileSetup incorrectly)
+  if (error && session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-6">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-md w-full text-center">
+          <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600 dark:text-red-400">
+            <AlertCircle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Error de conexión</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">
+            No pudimos cargar tus datos. Esto suele ser un problema temporal de red.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => refreshProfile()}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all"
+            >
+              Reintentar Carga
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="w-full py-3 px-4 bg-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium transition-all"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </div>
     );

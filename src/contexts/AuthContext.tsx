@@ -14,6 +14,7 @@ interface AuthContextType {
     user: User | null;
     profile: Profile | null;
     loading: boolean;
+    error: string | null;
     refreshProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -25,23 +26,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchProfile = async (userId: string) => {
         try {
-            const { data, error } = await supabase
+            setError(null);
+            const { data, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single();
 
-            if (error) {
-                console.error('Error fetching profile:', error.message);
-                setProfile(null);
+            if (profileError) {
+                // If it's a 'no rows found' error (PGRST116), it means the user just doesn't have a profile yet
+                if (profileError.code === 'PGRST116') {
+                    setProfile(null);
+                } else {
+                    console.error('Error fetching profile:', profileError.message);
+                    setError(profileError.message);
+                    setProfile(null);
+                }
             } else {
                 setProfile(data);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Unexpected error fetching profile:', err);
+            setError(err.message || 'Error inesperado al cargar el perfil');
             setProfile(null);
         } finally {
             setLoading(false);
@@ -137,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile, signOut }}>
+        <AuthContext.Provider value={{ session, user, profile, loading, error, refreshProfile, signOut }}>
             {children}
         </AuthContext.Provider>
     );
