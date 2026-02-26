@@ -12,15 +12,17 @@ interface Message {
         username: string;
         avatar_url: string | null;
         theme_color: string | null;
+        bio: string | null;
     };
 }
 
 interface MessageItemProps {
     message: Message;
     isOwnMessage: boolean;
+    onAvatarClick?: (profile: Message['profiles']) => void;
 }
 
-export const MessageItem = React.memo(({ message, isOwnMessage }: MessageItemProps) => {
+export const MessageItem = React.memo(({ message, isOwnMessage, onAvatarClick }: MessageItemProps) => {
     const { content, image_url, created_at, profiles } = message;
 
     const username = profiles?.username || 'Usuario';
@@ -39,19 +41,23 @@ export const MessageItem = React.memo(({ message, isOwnMessage }: MessageItemPro
 
     return (
         <div className={clsx('flex gap-3 mb-4 max-w-[85%]', isOwnMessage ? 'ml-auto flex-row-reverse' : '')}>
-            <div className="flex-shrink-0">
+            <button
+                onClick={() => onAvatarClick?.(profiles)}
+                className="flex-shrink-0 focus:outline-none group/avatar transition-transform active:scale-95"
+                aria-label={`View ${username}'s profile`}
+            >
                 {avatarUrl ? (
                     <img
                         src={avatarUrl}
                         alt={username}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm group-hover/avatar:border-blue-500 transition-colors"
                     />
                 ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-bold shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-bold shadow-sm group-hover/avatar:opacity-80 transition-opacity">
                         {username.charAt(0).toUpperCase()}
                     </div>
                 )}
-            </div>
+            </button>
 
             <div className={clsx('flex flex-col', isOwnMessage ? 'items-end' : 'items-start')}>
                 <div className="flex items-baseline gap-2 mb-1">

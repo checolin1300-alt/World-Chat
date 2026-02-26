@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageItem } from './MessageItem';
+import { UserProfileModal } from './UserProfileModal';
 import { Send, Loader2, AlertCircle, Image as ImageIcon, X } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -14,6 +15,7 @@ export function ChatRoom() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [viewedProfile, setViewedProfile] = useState<any>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +58,8 @@ export function ChatRoom() {
           profiles (
             username,
             avatar_url,
-            theme_color
+            theme_color,
+            bio
           )
         `)
                 .order('created_at', { ascending: true })
@@ -85,7 +88,8 @@ export function ChatRoom() {
           profiles (
             username,
             avatar_url,
-            theme_color
+            theme_color,
+            bio
           )
         `)
                 .eq('id', messageId)
@@ -216,6 +220,7 @@ export function ChatRoom() {
                             key={message.id}
                             message={message}
                             isOwnMessage={message.user_id === user?.id}
+                            onAvatarClick={(profile) => setViewedProfile(profile)}
                         />
                     ))
                 )}
@@ -279,6 +284,13 @@ export function ChatRoom() {
                     </div>
                 </form>
             </div>
+
+            {viewedProfile && (
+                <UserProfileModal
+                    profile={viewedProfile}
+                    onClose={() => setViewedProfile(null)}
+                />
+            )}
         </div>
     );
 }
