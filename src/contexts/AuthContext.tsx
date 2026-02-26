@@ -91,20 +91,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const initializeAuth = async () => {
             try {
-                console.log('Realizando limpieza de sesión inicial...');
-                // Force logout on every refresh as requested to ensure a clean state
-                await supabase.auth.signOut();
+                setLoading(true);
+                const { data: { session: initialSession }, error: authError } = await supabase.auth.getSession();
+                if (authError) throw authError;
 
                 if (mounted) {
-                    setSession(null);
-                    setUser(null);
-                    setProfile(null);
-                    setError(null);
+                    setSession(initialSession);
+                    setUser(initialSession?.user ?? null);
+
+                    if (initialSession?.user) {
+                        await fetchProfile(initialSession.user.id);
+                    } else {
+                        setProfile(null);
+                        setLoading(false);
+                    }
                 }
             } catch (error) {
-                console.error('Error durante el reset de sesión:', error);
-            } finally {
-                if (mounted) setLoading(false);
+                console.error('Error durante la inicialización de auth:', error);
+                if (mounted) {
+                    setProfile(null);
+                    setLoading(false);
+                }
             }
         };
 
@@ -118,14 +125,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
 
-                // Ignore INITIAL_SESSION to avoid duplicate fetches on boot
-                if (_event !== 'INITIAL_SESSION') {
-                    if (newSession?.user) {
+                // For any auth event that results in a user, ensure we fetch/refresh the profile
+                // and keep loading state active during the fetch.
+                if (newSession?.user) {
+                    if (_event !== 'INITIAL_SESSION') {
+                        setLoading(true);
                         await fetchProfile(newSession.user.id);
-                    } else {
-                        setProfile(null);
-                        setLoading(false);
                     }
+                } else {
+                    setProfile(null);
+                    setLoading(false);
                 }
             }
         );

@@ -65,25 +65,28 @@ function App() {
               </p>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   console.log('Reset Nuclear iniciado...');
                   try {
                     // Force state cleanup first
-                    signOut();
+                    await signOut();
                     // Nuclear Reset: Clear all possible storage
                     window.localStorage.clear();
                     window.sessionStorage.clear();
-                    // Successive attempts to clear specific keys
-                    for (let i = 0; i < localStorage.length; i++) {
-                      const key = localStorage.key(i);
-                      if (key && key.includes('supabase')) {
+
+                    // Specific keys just in case
+                    const keys = Object.keys(localStorage);
+                    for (const key of keys) {
+                      if (key.toLowerCase().includes('supabase')) {
                         localStorage.removeItem(key);
                       }
                     }
+
                     console.log('Limpieza completada, recargando...');
                     window.location.href = window.location.origin;
                   } catch (e) {
                     console.error('Error durante el reset nuclear:', e);
+                    window.localStorage.clear();
                     window.location.reload();
                   }
                 }}
