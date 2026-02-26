@@ -443,6 +443,10 @@ export function ChatRoom() {
                 <UserProfileModal
                     profile={viewedProfile}
                     onClose={() => setViewedProfile(null)}
+                    onSendMessage={(userId, profile) => {
+                        handleSelectUser(userId, profile);
+                        setViewedProfile(null);
+                    }}
                 />
             )}
         </div>

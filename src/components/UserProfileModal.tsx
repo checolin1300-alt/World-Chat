@@ -4,15 +4,17 @@ import clsx from 'clsx';
 interface UserProfileModalProps {
     profile: {
         username: string;
+        id?: string;
         avatar_url: string | null;
         bio: string | null;
         theme_color: string | null;
         created_at?: string;
     };
     onClose: () => void;
+    onSendMessage?: (userId: string, profile: any) => void;
 }
 
-export function UserProfileModal({ profile, onClose }: UserProfileModalProps) {
+export function UserProfileModal({ profile, onClose, onSendMessage }: UserProfileModalProps) {
     const themeColor = profile.theme_color || 'blue';
 
     const getThemeClasses = (color: string) => {
@@ -89,19 +91,27 @@ export function UserProfileModal({ profile, onClose }: UserProfileModalProps) {
                             </div>
                         </div>
 
-                        {/* Social/Stats Placeholder */}
-                        <div className="w-full mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-center gap-8">
-                            <div className="text-center">
-                                <div className="text-xl font-bold text-slate-900 dark:text-white">
-                                    <MessageSquare size={18} className="mx-auto text-slate-400" />
+                        <div className="w-full mt-6 pt-6 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-4">
+                            {onSendMessage && (
+                                <button
+                                    onClick={() => onSendMessage(profile.id as string, profile)}
+                                    className={clsx(
+                                        "w-full py-3 px-4 rounded-xl font-bold text-white shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2",
+                                        gradient.replace('from-', 'bg-') // Simplified mapping for the button color
+                                    )}
+                                >
+                                    <MessageSquare size={18} />
+                                    Enviar Mensaje Directo
+                                </button>
+                            )}
+
+                            <div className="flex justify-center gap-8">
+                                <div className="text-center">
+                                    <div className="text-xl font-bold text-slate-900 dark:text-white">
+                                        <Calendar size={18} className="mx-auto text-slate-400" />
+                                    </div>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Miembro</div>
                                 </div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Mensajear</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-xl font-bold text-slate-900 dark:text-white">
-                                    <Calendar size={18} className="mx-auto text-slate-400" />
-                                </div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">Miembro</div>
                             </div>
                         </div>
                     </div>
