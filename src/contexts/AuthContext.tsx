@@ -15,6 +15,7 @@ interface AuthContextType {
     profile: Profile | null;
     loading: boolean;
     error: string | null;
+    isPasswordRecovery: boolean;
     refreshProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
     const fetchProfile = async (userId: string) => {
         try {
@@ -94,9 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log(`Auth event: ${event}`);
             const currentUser = session?.user ?? null;
 
+            // Reset password recovery state on any new auth event
+            setIsPasswordRecovery(false);
+
             // Set session/user first
             setSession(session);
             setUser(currentUser);
+
+            if (event === 'PASSWORD_RECOVERY') {
+                setIsPasswordRecovery(true);
+                setLoading(false); // Stop loading, as we are in a special state
+                return; // Exit early
+            }
 
             if (currentUser) {
                 // If we have a user, we MUST have a profile before showing the app
@@ -129,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, user, profile, loading, error, refreshProfile, signOut }}>
+        <AuthContext.Provider value={{ session, user, profile, loading, error, isPasswordRecovery, refreshProfile, signOut }}>
             {children}
         </AuthContext.Provider>
     );

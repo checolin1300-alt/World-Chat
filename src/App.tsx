@@ -3,12 +3,13 @@ import { Navbar } from './components/Navbar';
 import { Auth } from './components/Auth';
 import { ProfileSetup } from './components/ProfileSetup';
 import { ChatRoom } from './components/ChatRoom';
+import { UpdatePassword } from './components/UpdatePassword';
 import { isConfigured } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import React from 'react';
 
 function App() {
-  const { session, profile, loading, error, signOut, refreshProfile } = useAuth();
+  const { session, profile, loading, error, isPasswordRecovery, signOut, refreshProfile } = useAuth();
   const [showReset, setShowReset] = React.useState(false);
 
   React.useEffect(() => {
@@ -94,6 +95,10 @@ function App() {
 
   // Main rendering logic
   const renderContent = () => {
+    if (isPasswordRecovery) {
+      return <UpdatePassword />;
+    }
+
     if (!session) {
       return <Auth />;
     }
