@@ -66,22 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const initializeAuth = async () => {
             try {
-                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-                if (error) throw error;
+                // Force logout on every refresh as requested by the user
+                // to avoid being stuck in any inconsistent auth/profile states.
+                await supabase.auth.signOut();
 
                 if (mounted) {
-                    setSession(initialSession);
-                    setUser(initialSession?.user ?? null);
-
-                    if (initialSession?.user) {
-                        await fetchProfile(initialSession.user.id);
-                    } else {
-                        setProfile(null);
-                        setLoading(false);
-                    }
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
                 }
             } catch (error) {
-                console.error('Error during auth initialization:', error);
+                console.error('Error during forced sign-out on refresh:', error);
+            } finally {
                 if (mounted) setLoading(false);
             }
         };
