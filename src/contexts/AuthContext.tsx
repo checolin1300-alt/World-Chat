@@ -15,6 +15,7 @@ interface AuthContextType {
     profile: Profile | null;
     loading: boolean;
     refreshProfile: () => Promise<void>;
+    signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +48,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const signOut = async () => {
+        try {
+            setLoading(true);
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+        } catch (error) {
+            console.error('Error signing out:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const refreshProfile = async () => {
         if (user) {
             await fetchProfile(user.id);
@@ -66,19 +81,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const initializeAuth = async () => {
             try {
-                // Force logout on every refresh as requested by the user
-                // to avoid being stuck in any inconsistent auth/profile states.
-                await supabase.auth.signOut();
+                console.log('Iniciando verificación de sesión...');
+                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+                if (error) throw error;
 
                 if (mounted) {
-                    setSession(null);
-                    setUser(null);
-                    setProfile(null);
+                    setSession(initialSession);
+                    setUser(initialSession?.user ?? null);
+
+                    if (initialSession?.user) {
+                        console.log('Sesión encontrada, obteniendo perfil...');
+                        await fetchProfile(initialSession.user.id);
+                    } else {
+                        console.log('No hay sesión activa.');
+                        setProfile(null);
+                        setLoading(false);
+                    }
                 }
             } catch (error) {
-                console.error('Error during forced sign-out on refresh:', error);
-            } finally {
-                if (mounted) setLoading(false);
+                console.error('Error durante la inicialización de auth:', error);
+                if (mounted) {
+                    setProfile(null);
+                    setLoading(false);
+                }
             }
         };
 
@@ -112,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile }}>
+        <AuthContext.Provider value={{ session, user, profile, loading, refreshProfile, signOut }}>
             {children}
         </AuthContext.Provider>
     );
