@@ -36,6 +36,12 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
             if (!event.target.files || event.target.files.length === 0) return;
 
             const file = event.target.files[0];
+            const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+            if (file.size > MAX_SIZE) {
+                throw new Error('La imagen es demasiado grande. El tamaño máximo permitido es 2MB.');
+            }
+
             const fileExt = file.name.split('.').pop();
             const fileName = `${user?.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
