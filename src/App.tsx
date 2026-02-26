@@ -65,30 +65,27 @@ function App() {
               </p>
               <button
                 type="button"
-                onClick={async () => {
-                  console.log('Reset Nuclear iniciado...');
-                  try {
-                    // Force state cleanup first
-                    await signOut();
-                    // Nuclear Reset: Clear all possible storage
-                    window.localStorage.clear();
-                    window.sessionStorage.clear();
+                onClick={() => {
+                  console.log('Reset Nuclear iniciado (Sincrónico)...');
+                  // Nuclear Reset: Clear all possible storage immediately
+                  window.localStorage.clear();
+                  window.sessionStorage.clear();
 
-                    // Specific keys just in case
+                  // Specific keys just in case
+                  try {
                     const keys = Object.keys(localStorage);
                     for (const key of keys) {
                       if (key.toLowerCase().includes('supabase')) {
                         localStorage.removeItem(key);
                       }
                     }
-
-                    console.log('Limpieza completada, recargando...');
-                    window.location.href = window.location.origin;
                   } catch (e) {
-                    console.error('Error durante el reset nuclear:', e);
-                    window.localStorage.clear();
-                    window.location.reload();
+                    console.warn('Error clearing specific keys:', e);
                   }
+
+                  console.log('Limpieza completada, recargando...');
+                  // Force a hard reload to the home page
+                  window.location.replace(window.location.origin);
                 }}
                 className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-bold rounded-xl border-2 border-amber-200 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-slate-700 transition-all shadow-md active:scale-95"
               >
@@ -139,7 +136,11 @@ function App() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         {!session ? (
           <Auth />
+        ) : error ? (
+          // We already handled error && session above, but just in case
+          null
         ) : !profile ? (
+          // Only show ProfileSetup if we have a session AND confirmed no profile
           <ProfileSetup />
         ) : (
           <ChatRoom />

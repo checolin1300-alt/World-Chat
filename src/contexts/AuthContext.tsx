@@ -61,10 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         try {
             setLoading(true);
-            await supabase.auth.signOut();
+            // Clear local states immediately for UI responsiveness
             setSession(null);
             setUser(null);
             setProfile(null);
+            setError(null);
+
+            await supabase.auth.signOut();
         } catch (error) {
             console.error('Error signing out:', error);
         } finally {
@@ -93,13 +96,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 setLoading(true);
                 const { data: { session: initialSession }, error: authError } = await supabase.auth.getSession();
-                if (authError) throw authError;
 
                 if (mounted) {
+                    if (authError) {
+                        console.error('Auth check error:', authError);
+                        setSession(null);
+                        setUser(null);
+                        setLoading(false);
+                        return;
+                    }
+
                     setSession(initialSession);
                     setUser(initialSession?.user ?? null);
 
                     if (initialSession?.user) {
+                        // Keep loading = true while fetching profile
                         await fetchProfile(initialSession.user.id);
                     } else {
                         setProfile(null);
@@ -109,6 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } catch (error) {
                 console.error('Error durante la inicialización de auth:', error);
                 if (mounted) {
+                    setSession(null);
+                    setUser(null);
                     setProfile(null);
                     setLoading(false);
                 }
@@ -122,19 +135,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             async (_event, newSession) => {
                 if (!mounted) return;
 
-                setSession(newSession);
-                setUser(newSession?.user ?? null);
+                // Only update and potentially trigger loading if session actually changed
+                // or if it's a significant event (like SIGNED_IN)
+                if (_event === 'SIGNED_OUT') {
+                    setSession(null);
+                    setUser(null);
+                    setProfile(null);
+                    setLoading(false);
+                } else if (newSession?.user) {
+                    // Start loading before setting session to prevent flicker in App.tsx
+                    if (_event === 'SIGNED_IN') setLoading(true);
 
-                // For any auth event that results in a user, ensure we fetch/refresh the profile
-                // and keep loading state active during the fetch.
-                if (newSession?.user) {
+                    setSession(newSession);
+                    setUser(newSession?.user ?? null);
+
                     if (_event !== 'INITIAL_SESSION') {
                         setLoading(true);
                         await fetchProfile(newSession.user.id);
                     }
-                } else {
-                    setProfile(null);
-                    setLoading(false);
                 }
             }
         );
