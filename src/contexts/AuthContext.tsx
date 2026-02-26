@@ -51,33 +51,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id).then(() => setLoading(false));
-            } else {
-                setLoading(false);
+        let mounted = true;
+
+        const initializeAuth = async () => {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+
+                if (mounted) {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+
+                    if (session?.user) {
+                        await fetchProfile(session.user.id);
+                    } else {
+                        setProfile(null);
+                    }
+                }
+            } catch (error) {
+                console.error('Error during auth initialization:', error);
+            } finally {
+                if (mounted) setLoading(false);
             }
-        });
+        };
+
+        initializeAuth();
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (_event, newSession) => {
+                if (!mounted) return;
+
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
 
-                if (newSession?.user) {
-                    await fetchProfile(newSession.user.id);
-                } else {
-                    setProfile(null);
+                // Ignore INITIAL_SESSION to avoid duplicate fetches on boot
+                if (_event !== 'INITIAL_SESSION') {
+                    if (newSession?.user) {
+                        await fetchProfile(newSession.user.id);
+                    } else {
+                        setProfile(null);
+                    }
                 }
-                setLoading(false);
             }
         );
 
         return () => {
+            mounted = false;
             subscription.unsubscribe();
         };
     }, []);
