@@ -71,6 +71,7 @@ export function ChatRoom() {
           image_url,
           created_at,
           profiles (
+            id,
             username,
             avatar_url,
             theme_color,
@@ -101,6 +102,7 @@ export function ChatRoom() {
           image_url,
           created_at,
           profiles (
+            id,
             username,
             avatar_url,
             theme_color,

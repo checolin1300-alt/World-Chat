@@ -35,7 +35,16 @@ export function DMChat({ conversationId, recipientProfile, onBack }: DMChatProps
         try {
             const { data, error } = await supabase
                 .from('direct_messages')
-                .select('*')
+                .select(`
+                    *,
+                    profiles:sender_id (
+                        id,
+                        username,
+                        avatar_url,
+                        theme_color,
+                        bio
+                    )
+                `)
                 .eq('conversation_id', conversationId)
                 .order('created_at', { ascending: true });
 
@@ -72,7 +81,16 @@ export function DMChat({ conversationId, recipientProfile, onBack }: DMChatProps
                     filter: `conversation_id=eq.${conversationId}`,
                 },
                 (payload) => {
-                    setMessages((prev) => [...prev, payload.new]);
+                    // For realtime inserts, we won't have the profile join automatically.
+                    // We can either fetch the profile or use the recipientProfile if it's the sender
+                    const newMessage = {
+                        ...payload.new,
+                        profiles: payload.new.sender_id === user?.id
+                            ? profile
+                            : recipientProfile
+                    };
+
+                    setMessages((prev) => [...prev, newMessage]);
 
                     // Mark as read if it's from the other person
                     if (payload.new.sender_id !== user?.id) {

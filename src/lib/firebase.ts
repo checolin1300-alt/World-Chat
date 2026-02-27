@@ -10,11 +10,17 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase only if the config is available to prevent crashes
+// Initialize Firebase only if the full config is available to prevent crashes
 let app;
 let messaging: any = null;
 
-if (firebaseConfig.apiKey) {
+const isConfigValid = !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId
+);
+
+if (isConfigValid) {
     try {
         app = initializeApp(firebaseConfig);
         if (typeof window !== 'undefined') {
@@ -24,7 +30,7 @@ if (firebaseConfig.apiKey) {
         console.error("Firebase initialization failed:", error);
     }
 } else {
-    console.warn("Firebase configuration missing. Notifications will be disabled.");
+    console.warn("Firebase configuration incomplete. Notifications will be disabled. Check your environment variables.");
 }
 
 export { messaging };
