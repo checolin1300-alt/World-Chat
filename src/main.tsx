@@ -4,12 +4,15 @@ import App from './App.tsx';
 import './index.css';
 import { ThemeProvider } from './contexts/ThemeContext.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { NotificationProvider } from './contexts/NotificationContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
-        <App />
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>,

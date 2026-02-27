@@ -10,10 +10,17 @@ import { Send, Loader2, AlertCircle, Image as ImageIcon, X, Users, MessageSquare
 import imageCompression from 'browser-image-compression';
 import clsx from 'clsx';
 
+import { useNotifications } from '../contexts/NotificationContext';
+
 export function ChatRoom() {
     const { user, profile } = useAuth();
+    const { requestPermission, clearUnreadForConversation } = useNotifications();
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
+
+    useEffect(() => {
+        requestPermission();
+    }, [requestPermission]);
     const [imageUploading, setImageUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -236,6 +243,7 @@ export function ChatRoom() {
 
             setActiveDM({ id: conversationId, recipient: targetProfile });
             setActiveTab('dms');
+            clearUnreadForConversation(conversationId);
             setShowOnlineUsers(false);
         } catch (err) {
             console.error('Error opening DM:', err);
@@ -243,8 +251,10 @@ export function ChatRoom() {
         }
     };
 
-    const handleSelectConversation = (conversationId: string, recipientProfile: any) => {
-        setActiveDM({ id: conversationId, recipient: recipientProfile });
+    const handleSelectConversation = (conversation: any) => {
+        setActiveDM(conversation);
+        setActiveTab('dms');
+        clearUnreadForConversation(conversation.id);
     };
 
     if (loading) {
@@ -313,8 +323,8 @@ export function ChatRoom() {
                     </button>
                     <div className="flex-1 min-h-0">
                         <ConversationsInbox
-                            onSelectConversation={(id, profile) => {
-                                handleSelectConversation(id, profile);
+                            onSelectConversation={(id, recipient) => {
+                                handleSelectConversation({ id, recipient });
                                 setActiveTab('dms');
                             }}
                             activeConversationId={activeTab === 'dms' ? activeDM?.id : null}
