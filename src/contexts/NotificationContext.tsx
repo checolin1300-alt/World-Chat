@@ -32,22 +32,37 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }, [user]);
 
     const requestPermission = async () => {
-        if (!('Notification' in window)) return;
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted' && messaging && user) {
-            try {
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted' && messaging && user) {
+                // Ensure the service worker is registered and ready
+                const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+                // Wait a bit for the SW to be active if it was just registered
+                let retry = 0;
+                while (registration.installing && retry < 10) {
+                    await new Promise(r => setTimeout(r, 500));
+                    retry++;
+                }
+
                 const token = await getToken(messaging, {
-                    vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+                    vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                    serviceWorkerRegistration: registration
                 });
 
                 if (token) {
+                    console.log('FCM Token generated successfully');
                     await supabase
                         .from('user_tokens')
                         .upsert([{ user_id: user.id, token, platform: 'web' }], { onConflict: 'token' });
                 }
-            } catch (err) {
-                console.error('Error getting FCM token:', err);
+            }
+        } catch (err: any) {
+            console.error('Error getting FCM token details:', err);
+            if (err.message?.includes('push service error')) {
+                console.warn('The browser push service is temporarily unavailable or blocked. Please check your browser settings or VPN.');
             }
         }
     };
