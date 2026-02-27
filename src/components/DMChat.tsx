@@ -67,6 +67,34 @@ export function DMChat({ conversationId, recipientProfile, onBack }: DMChatProps
         }
     }, [conversationId, user?.id]);
 
+    const fetchSingleMessage = useCallback(async (messageId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('direct_messages')
+                .select(`
+                    *,
+                    profiles:sender_id (
+                        id,
+                        username,
+                        avatar_url,
+                        theme_color,
+                        bio
+                    )
+                `)
+                .eq('id', messageId)
+                .single();
+
+            if (error) throw error;
+
+            setMessages((prev) => {
+                if (prev.find(m => m.id === data.id)) return prev;
+                return [...prev, data];
+            });
+        } catch (err) {
+            console.error('Error fetching new DM:', err);
+        }
+    }, []);
+
     useEffect(() => {
         fetchMessages();
 
@@ -81,16 +109,7 @@ export function DMChat({ conversationId, recipientProfile, onBack }: DMChatProps
                     filter: `conversation_id=eq.${conversationId}`,
                 },
                 (payload) => {
-                    // For realtime inserts, we won't have the profile join automatically.
-                    // We can either fetch the profile or use the recipientProfile if it's the sender
-                    const newMessage = {
-                        ...payload.new,
-                        profiles: payload.new.sender_id === user?.id
-                            ? profile
-                            : recipientProfile
-                    };
-
-                    setMessages((prev) => [...prev, newMessage]);
+                    fetchSingleMessage(payload.new.id);
 
                     // Mark as read if it's from the other person
                     if (payload.new.sender_id !== user?.id) {
