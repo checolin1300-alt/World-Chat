@@ -1,6 +1,6 @@
 // Scripts for firebase and firebase messaging
-importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.13.1/firebase-messaging-compat.js");
 
 // Initialize the Firebase app in the service worker by passing in the messagingSenderId.
 // Note: In production, these should match your .env values.
@@ -19,11 +19,13 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: payload.notification.icon || '/logo192.png',
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    if (payload.notification) {
+        const notificationTitle = payload.notification.title || "Nuevo mensaje";
+        const notificationOptions = {
+            body: payload.notification.body || "Tienes un nuevo mensaje directo",
+            icon: payload.notification.icon || '/icon-192.png',
+            data: payload.data
+        };
+        self.registration.showNotification(notificationTitle, notificationOptions);
+    }
 });

@@ -212,7 +212,10 @@ export function ChatRoom() {
     }, [messages]);
 
     const handleSelectUser = async (targetUserId: string, targetProfile: any) => {
-        if (!user) return;
+        if (!user || !targetUserId) {
+            console.error('Cannot open DM: targetUserId is missing', { targetUserId, targetProfile });
+            return;
+        }
 
         try {
             // Sort participants to match the DB storage logic (always participant1 < participant2)
