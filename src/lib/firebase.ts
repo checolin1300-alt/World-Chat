@@ -10,8 +10,21 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if the config is available to prevent crashes
+let app;
+let messaging: any = null;
 
-// Initialize Firebase Cloud Messaging and get a reference to the service
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+if (firebaseConfig.apiKey) {
+    try {
+        app = initializeApp(firebaseConfig);
+        if (typeof window !== 'undefined') {
+            messaging = getMessaging(app);
+        }
+    } catch (error) {
+        console.error("Firebase initialization failed:", error);
+    }
+} else {
+    console.warn("Firebase configuration missing. Notifications will be disabled.");
+}
+
+export { messaging };

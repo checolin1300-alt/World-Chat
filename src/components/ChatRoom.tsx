@@ -213,11 +213,15 @@ export function ChatRoom() {
         if (!user) return;
 
         try {
-            // Check if conversation already exists
+            // Sort participants to match the DB storage logic (always participant1 < participant2)
+            const participants = [user.id, targetUserId].sort();
+
+            // Check if conversation already exists using the sorted pair
             const { data: convs, error: convError } = await supabase
                 .from('conversations')
                 .select('id')
-                .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${targetUserId}),and(participant1_id.eq.${targetUserId},participant2_id.eq.${user.id})`)
+                .eq('participant1_id', participants[0])
+                .eq('participant2_id', participants[1])
                 .maybeSingle();
 
             if (convError) throw convError;
@@ -226,8 +230,7 @@ export function ChatRoom() {
             if (convs) {
                 conversationId = convs.id;
             } else {
-                // Create new conversation
-                const participants = [user.id, targetUserId].sort();
+                // Create new conversation using already sorted participants
                 const { data: newConv, error: createError } = await supabase
                     .from('conversations')
                     .insert([{
